@@ -16,7 +16,7 @@ from custom_exceptions import (
     InvalidCharacterClassError,
     CharacterNotFoundError,
     SaveFileCorruptedError,
-    InsufficientGoldError
+    InsufficientLevelError
 )
 
 # ============================================================================
