@@ -14,7 +14,8 @@ from custom_exceptions import (
     CharacterNotFoundError,
     InvalidSaveDataError,
     SaveFileCorruptedError,
-    InvalidCharacterClassError
+    InvalidCharacterClassError,
+    CharacterDeadError
 )
 
 SAVE_DIR = "data/save_games"
