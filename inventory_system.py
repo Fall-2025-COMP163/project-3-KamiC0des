@@ -10,7 +10,6 @@ This module handles inventory management, item usage, and equipment.
 """
 
 from custom_exceptions import (
-    InventoryFullError,
     ItemNotFoundError,
     InsufficientResourcesError,
     InvalidItemTypeError
@@ -65,21 +64,17 @@ def use_item(character, item_id, item_data):
     if item_id not in character["inventory"]:
         raise ItemNotFoundError(item_id)
 
-    if item_id not in item_data:
-        raise InvalidItemTypeError("Item data missing.")
+    if not item_data or item_data.get("type") != "consumable":
+        raise InvalidItemTypeError("Item data missing or not consumable")
 
-    data = item_data[item_id]
+    # Example effect processing
+    if "health" in item_data.get("effect", ""):
+        heal_amount = int(item_data["effect"].split(":")[1])
+        character["health"] = min(character["max_health"], character["health"] + heal_amount)
 
-    if data.get("type") != "consumable":
-        raise InvalidItemTypeError("Item is not consumable.")
-
-    # Parse effect
-    effect = data.get("effect", "")
-    stat, value = parse_item_effect(effect)
-    apply_stat_effect(character, stat, value)
-
+    # Remove used item
     character["inventory"].remove(item_id)
-    return f"Used {data.get('name', item_id)} (+{value} {stat})."
+    return True
 
 
 # ============================================================================
@@ -90,34 +85,15 @@ def equip_weapon(character, item_id, item_data):
     if item_id not in character["inventory"]:
         raise ItemNotFoundError(item_id)
 
-    if item_id not in item_data or item_data[item_id].get("type") != "weapon":
-        raise InvalidItemTypeError("Item is not a weapon.")
+    if not item_data or item_data.get("type") != "weapon":
+        raise InvalidItemTypeError("Item is not a weapon")
 
-    weapon_data = item_data[item_id]
-    effect = weapon_data.get("effect", "")
-    stat, value = parse_item_effect(effect)
+    # Example: apply strength bonus
+    if "strength" in item_data.get("effect", ""):
+        bonus = int(item_data["effect"].split(":")[1])
+        character["strength"] += bonus
+    return True
 
-    # Unequip previous weapon
-    old_weapon = character.get("equipped_weapon")
-    if old_weapon:
-        # Remove old bonus
-        old_stat, old_val = parse_item_effect(item_data[old_weapon]["effect"])
-        apply_stat_effect(character, old_stat, -old_val)
-
-        # Inventory full?
-        if len(character["inventory"]) >= MAX_INVENTORY_SIZE:
-            raise InventoryFullError("No space to unequip weapon.")
-
-        character["inventory"].append(old_weapon)
-
-    # Equip new weapon
-    character["equipped_weapon"] = item_id
-    character["inventory"].remove(item_id)
-
-    # Apply new stat bonus
-    apply_stat_effect(character, stat, value)
-
-    return f"Equipped weapon: {weapon_data.get('name', item_id)}"
 
 
 def equip_armor(character, item_id, item_data):
@@ -233,13 +209,12 @@ def sell_item(character, item_id, item_data):
     if item_id not in character["inventory"]:
         raise ItemNotFoundError(item_id)
 
-    cost = item_data[item_id].get("cost", 0)
-    sell_price = cost // 2
-
+    # Use the passed dictionary directly
+    cost = item_data.get("cost", 0)
+    character["gold"] += cost
     character["inventory"].remove(item_id)
-    character["gold"] += sell_price
+    return cost
 
-    return sell_price
 
 
 # ============================================================================
@@ -292,7 +267,7 @@ if __name__ == "__main__":
     
     # Test adding items
     test_char = {'inventory': [], 'gold': 100, 'health': 80, 'max_health': 80}
-    
+
     try:
         add_item_to_inventory(test_char, "health_potion")
         print(f"Inventory: {test_char['inventory']}")
@@ -305,7 +280,7 @@ if __name__ == "__main__":
         'type': 'consumable',
         'effect': 'health:20'
     }
-    
+
     try:
         result = use_item(test_char, "health_potion", test_item)
         print(result)
