@@ -24,83 +24,122 @@ from custom_exceptions import (
 def load_quests(filename="data/quests.txt"):
     """
     Load quest data from file
+
     Returns: Dictionary of quests {quest_id: quest_data_dict}
     Raises: MissingDataFileError, InvalidDataFormatError, CorruptedDataError
     """
+    # TODO: Implement this function
     if not os.path.exists(filename):
-        raise MissingDataFileError(f"Quest file '{filename}' not found")
+        # File does not exist → raise custom exception
+        raise MissingDataFileError(f"Quest data file '{filename}' not found.")
 
     quests = {}
     try:
-        with open(filename, "r") as f:
-            lines = [line.rstrip() for line in f]
-        block = []
-        for line in lines + [""]:  # add empty line at end to process last block
-            if line.strip() == "":
-                if block:
-                    quest = parse_quest_block(block)
-                    quests[quest["quest_id"]] = quest
-                    block = []
-            else:
-                block.append(line)
-        return quests
+        with open(filename, "r", encoding="utf-8") as f:
+            block = []
+            for line in f:
+                line = line.strip()
+                if line == "":
+                    # Blank line indicates end of a quest block
+                    if block:
+                        quest = parse_quest_block(block)
+                        quests[quest['quest_id']] = quest
+                        block = []
+                else:
+                    block.append(line)
+            # Handle last block if file doesn't end with blank line
+            if block:
+                quest = parse_quest_block(block)
+                quests[quest['quest_id']] = quest
+    except UnicodeDecodeError:
+        # File content cannot be read → treat as corrupted
+        raise CorruptedDataError(f"Quest data file '{filename}' is corrupted.")
     except InvalidDataFormatError:
+        # Re-raise parsing errors
         raise
     except Exception as e:
-        raise CorruptedDataError(f"Error reading quests: {e}")
+        # Any other unexpected error
+        raise InvalidDataFormatError(f"Error loading quest data: {e}")
+
+    return quests
 
 
 def load_items(filename="data/items.txt"):
     """
     Load item data from file
+
     Returns: Dictionary of items {item_id: item_data_dict}
     Raises: MissingDataFileError, InvalidDataFormatError, CorruptedDataError
     """
+    # TODO: Implement this function
     if not os.path.exists(filename):
-        raise MissingDataFileError(f"Item file '{filename}' not found")
+        raise MissingDataFileError(f"Item data file '{filename}' not found.")
 
     items = {}
     try:
-        with open(filename, "r") as f:
-            lines = [line.rstrip() for line in f]
-        block = []
-        for line in lines + [""]:
-            if line.strip() == "":
-                if block:
-                    item = parse_item_block(block)
-                    items[item["item_id"]] = item
-                    block = []
-            else:
-                block.append(line)
-        return items
+        with open(filename, "r", encoding="utf-8") as f:
+            block = []
+            for line in f:
+                line = line.strip()
+                if line == "":
+                    # Blank line → end of item block
+                    if block:
+                        item = parse_item_block(block)
+                        items[item['item_id']] = item
+                        block = []
+                else:
+                    block.append(line)
+            # Handle last block if file doesn't end with blank line
+            if block:
+                item = parse_item_block(block)
+                items[item['item_id']] = item
+    except UnicodeDecodeError:
+        raise CorruptedDataError(f"Item data file '{filename}' is corrupted.")
     except InvalidDataFormatError:
         raise
     except Exception as e:
-        raise CorruptedDataError(f"Error reading items: {e}")
+        raise InvalidDataFormatError(f"Error loading item data: {e}")
+
+    return items
 
 
 def validate_quest_data(quest_dict):
-    required_keys = ["quest_id", "title", "description", "reward_xp",
-                     "reward_gold", "required_level", "prerequisite"]
-    for key in required_keys:
-        if key not in quest_dict:
-            raise InvalidDataFormatError(f"Missing quest field: {key}")
-    for num_field in ["reward_xp", "reward_gold", "required_level"]:
-        if not isinstance(quest_dict[num_field], int):
-            raise InvalidDataFormatError(f"Field '{num_field}' must be integer")
+    """
+    Validate that quest dictionary has all required fields
+    """
+    # TODO: Implement validation
+    required_fields = ['quest_id', 'title', 'description', 'reward_xp',
+                       'reward_gold', 'required_level', 'prerequisite']
+    for field in required_fields:
+        if field not in quest_dict:
+            raise InvalidDataFormatError(f"Quest missing required field '{field}'")
+
+    # Ensure numeric fields are integers
+    for numeric_field in ['reward_xp', 'reward_gold', 'required_level']:
+        if not isinstance(quest_dict[numeric_field], int):
+            raise InvalidDataFormatError(f"Quest field '{numeric_field}' must be an integer")
+
     return True
 
 
 def validate_item_data(item_dict):
-    required_keys = ["item_id", "name", "type", "effect", "cost", "description"]
-    valid_types = {"weapon", "armor", "consumable"}
-    for key in required_keys:
-        if key not in item_dict:
-            raise InvalidDataFormatError(f"Missing item field: {key}")
-    if item_dict["type"].lower() not in valid_types:
-        raise InvalidDataFormatError(f"Invalid item type: {item_dict['type']}")
-    if not isinstance(item_dict["cost"], int):
-        raise InvalidDataFormatError(f"Item cost must be integer")
+    """
+    Validate that item dictionary has all required fields
+    """
+    # TODO: Implement validation
+    required_fields = ['item_id', 'name', 'type', 'effect', 'cost', 'description']
+    for field in required_fields:
+        if field not in item_dict:
+            raise InvalidDataFormatError(f"Item missing required field '{field}'")
+
+    valid_types = ['weapon', 'armor', 'consumable']
+    if item_dict['type'] not in valid_types:
+        raise InvalidDataFormatError(f"Invalid item type '{item_dict['type']}'")
+
+    # Ensure cost is numeric
+    if not isinstance(item_dict['cost'], int):
+        raise InvalidDataFormatError(f"Item 'cost' must be an integer")
+
     return True
 
 
@@ -108,148 +147,112 @@ def create_default_data_files():
     """
     Create default data files if they don't exist
     """
-    os.makedirs("data", exist_ok=True)
+    # TODO: Implement this function
+    os.makedirs("data", exist_ok=True)  # Ensure data directory exists
 
-    quests_file = "data/quests.txt"
-    items_file = "data/items.txt"
+    # Default quest file
+    quest_file = "data/quests.txt"
+    if not os.path.exists(quest_file):
+        with open(quest_file, "w", encoding="utf-8") as f:
+            f.write(
+                "QUEST_ID:quest_001\n"
+                "TITLE:First Adventure\n"
+                "DESCRIPTION:Complete your first quest.\n"
+                "REWARD_XP:100\n"
+                "REWARD_GOLD:50\n"
+                "REQUIRED_LEVEL:1\n"
+                "PREREQUISITE:NONE\n\n"
+            )
 
-    if not os.path.exists(quests_file):
-        default_quests = """QUEST_ID: quest1
-TITLE: The Beginning
-DESCRIPTION: Start your journey
-REWARD_XP: 100
-REWARD_GOLD: 50
-REQUIRED_LEVEL: 1
-PREREQUISITE: NONE
-
-QUEST_ID: quest2
-TITLE: The Next Step
-DESCRIPTION: Continue your adventure
-REWARD_XP: 200
-REWARD_GOLD: 75
-REQUIRED_LEVEL: 2
-PREREQUISITE: quest1
-"""
-        with open(quests_file, "w") as f:
-            f.write(default_quests)
-
-    if not os.path.exists(items_file):
-        default_items = """ITEM_ID: sword1
-NAME: Iron Sword
-TYPE: weapon
-EFFECT: strength:5
-COST: 100
-DESCRIPTION: Basic iron sword
-
-ITEM_ID: potion1
-NAME: Health Potion
-TYPE: consumable
-EFFECT: health:20
-COST: 50
-DESCRIPTION: Restores health
-"""
-        with open(items_file, "w") as f:
-            f.write(default_items)
+    # Default item file
+    item_file = "data/items.txt"
+    if not os.path.exists(item_file):
+        with open(item_file, "w", encoding="utf-8") as f:
+            f.write(
+                "ITEM_ID:item_001\n"
+                "NAME:Health Potion\n"
+                "TYPE:consumable\n"
+                "EFFECT:health:50\n"
+                "COST:20\n"
+                "DESCRIPTION:Restores 50 health.\n\n"
+            )
 
 
 # ============================================================================
 # HELPER FUNCTIONS
 # ============================================================================
 
+
 def parse_quest_block(lines):
+    """
+    Parse a block of lines into a quest dictionary
+    """
+    # TODO: Implement parsing logic
     quest = {}
     try:
         for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            if ": " not in line:
-                raise InvalidDataFormatError(f"Line missing separator ': ': {line}")
-            key, value = line.split(": ", 1)
-            key = key.lower()
-            if key in ["reward_xp", "reward_gold", "required_level"]:
-                try:
-                    value = int(value)
-                except ValueError:
-                    raise InvalidDataFormatError(f"Expected numeric value for {key}, got '{value}'")
+            key, value = line.split(":", 1)  # Split only on first colon
+            key = key.strip().lower()
+            value = value.strip()
+            if key == "reward_xp" or key == "reward_gold" or key == "required_level":
+                value = int(value)  # Convert numeric fields to int
             quest[key] = value
-        required_keys = ["quest_id", "title", "description", "reward_xp",
-                         "reward_gold", "required_level", "prerequisite"]
-        for rk in required_keys:
-            if rk not in quest:
-                raise InvalidDataFormatError(f"Missing required field: {rk}")
-        return quest
+        # Validate quest data
+        validate_quest_data({
+            'quest_id': quest.get('quest_id'),
+            'title': quest.get('title'),
+            'description': quest.get('description'),
+            'reward_xp': quest.get('reward_xp'),
+            'reward_gold': quest.get('reward_gold'),
+            'required_level': quest.get('required_level'),
+            'prerequisite': quest.get('prerequisite')
+        })
     except Exception as e:
-        if isinstance(e, InvalidDataFormatError):
-            raise e
         raise InvalidDataFormatError(f"Failed to parse quest block: {e}")
+
+    return quest
 
 
 def parse_item_block(lines):
+    """
+    Parse a block of lines into an item dictionary
+    """
+    # TODO: Implement parsing logic
     item = {}
-    valid_types = {"weapon", "armor", "consumable"}
     try:
         for line in lines:
-            line = line.strip()
-            if not line:
-                continue
-            if ": " not in line:
-                raise InvalidDataFormatError(f"Line missing separator ': ': {line}")
-            key, value = line.split(": ", 1)
-            key = key.lower()
+            key, value = line.split(":", 1)
+            key = key.strip().lower()
+            value = value.strip()
             if key == "cost":
-                try:
-                    value = int(value)
-                except ValueError:
-                    raise InvalidDataFormatError(f"Expected numeric value for cost, got '{value}'")
-            if key == "type" and value.lower() not in valid_types:
-                raise InvalidDataFormatError(f"Invalid item type: {value}")
+                value = int(value)  # Convert cost to integer
             item[key] = value
-        required_keys = ["item_id", "name", "type", "effect", "cost", "description"]
-        for rk in required_keys:
-            if rk not in item:
-                raise InvalidDataFormatError(f"Missing required field: {rk}")
-        return item
+        # Validate item data
+        validate_item_data({
+            'item_id': item.get('item_id'),
+            'name': item.get('name'),
+            'type': item.get('type'),
+            'effect': item.get('effect'),
+            'cost': item.get('cost'),
+            'description': item.get('description')
+        })
     except Exception as e:
-        if isinstance(e, InvalidDataFormatError):
-            raise e
         raise InvalidDataFormatError(f"Failed to parse item block: {e}")
 
+    return item
+
 
 # ============================================================================
 # TESTING
 # ============================================================================
 
-if __name__ == "__main__":
-    print("=== GAME DATA MODULE TEST ===")
-    create_default_data_files()
-
-    try:
-        quests = load_quests()
-        print(f"Loaded {len(quests)} quests")
-    except MissingDataFileError:
-        print("Quest file not found")
-    except InvalidDataFormatError as e:
-        print(f"Invalid quest format: {e}")
-
-    try:
-        items = load_items()
-        print(f"Loaded {len(items)} items")
-    except MissingDataFileError:
-        print("Item file not found")
-    except InvalidDataFormatError as e:
-        print(f"Invalid item format: {e}")
-
-# ============================================================================
-# TESTING
-# ============================================================================
 
 if __name__ == "__main__":
     print("=== GAME DATA MODULE TEST ===")
-    
-    # Test creating default files
+
+    # Create default files if missing
     create_default_data_files()
-    
+
     # Test loading quests
     try:
         quests = load_quests()
@@ -258,7 +261,7 @@ if __name__ == "__main__":
         print("Quest file not found")
     except InvalidDataFormatError as e:
         print(f"Invalid quest format: {e}")
-    
+
     # Test loading items
     try:
         items = load_items()
