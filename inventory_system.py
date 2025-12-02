@@ -192,19 +192,40 @@ def unequip_armor(character):
 # ============================================================================
 
 def purchase_item(character, item_id, item_data):
-    if item_id not in item_data:
+    """
+    Attempt to purchase an item for the character.
+
+    Args:
+        character: dict representing the character
+        item_id: string, the ID of the item to buy
+        item_data: dict representing the item with at least a 'cost' key
+
+    Raises:
+        ItemNotFoundError: if item_data is None or missing
+        InsufficientResourcesError: if character does not have enough gold
+        InvalidItemTypeError: if item_data is missing 'cost' or invalid
+    """
+    if not item_data:
+        # Item does not exist at all
         raise ItemNotFoundError(item_id)
 
-    cost = item_data[item_id]["cost"] if isinstance(item_data[item_id], dict) else item_data[item_id]
-    
-    if character["gold"] < cost:
-        raise InsufficientResourcesError(f"Not enough gold to purchase {item_id}.")
+    # Ensure the item has a valid 'cost'
+    cost = item_data.get("cost")
+    if cost is None or not isinstance(cost, (int, float)):
+        raise InvalidItemTypeError(f"Item {item_id} has invalid cost")
 
-    if len(character["inventory"]) >= MAX_INVENTORY_SIZE:
-        raise InventoryFullError("Inventory full.")
+    # Check if character has enough gold
+    current_gold = character.get("gold", 0)
+    if current_gold < cost:
+        raise InsufficientResourcesError(
+            f"Character has {current_gold} gold but needs {cost} to buy {item_id}"
+        )
 
-    character["gold"] -= cost
-    character["inventory"].append(item_id)
+    # Deduct gold and add item to inventory
+    character["gold"] = current_gold - cost
+    inventory = character.setdefault("inventory", [])
+    inventory.append(item_id)
+
     return True
 
 
