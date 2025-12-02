@@ -20,8 +20,12 @@ from custom_exceptions import (
 
 SAVE_DIR = "data/save_games"
 
+
+ALLOWED_CLASSES = ["Warrior", "Mage", "Cleric", "Rogue"]  # added Rogue
+
+
 def create_character(name, char_class):
-    if char_class not in ["Warrior", "Mage", "Cleric"]:
+    if char_class not in ALLOWED_CLASSES:
         raise InvalidCharacterClassError(char_class)
 
     character = {
@@ -37,13 +41,15 @@ def create_character(name, char_class):
         "inventory": [],
         "active_quests": [],
         "completed_quests": [],
+        "equipped_weapon": None,
+        "equipped_armor": None,
     }
     return character
+
 
 def save_character(character, save_directory=SAVE_DIR):
     os.makedirs(save_directory, exist_ok=True)
     filename = os.path.join(save_directory, f"{character['name']}_save.txt")
-
     try:
         with open(filename, "w") as f:
             for key, value in character.items():
@@ -53,6 +59,7 @@ def save_character(character, save_directory=SAVE_DIR):
         return True
     except (OSError, IOError):
         return False
+
 
 def load_character(character_name, save_directory=SAVE_DIR):
     filename = os.path.join(save_directory, f"{character_name}_save.txt")
@@ -79,7 +86,8 @@ def load_character(character_name, save_directory=SAVE_DIR):
         required_keys = [
             "name", "class", "level", "health", "max_health",
             "strength", "magic", "experience", "gold",
-            "inventory", "active_quests", "completed_quests"
+            "inventory", "active_quests", "completed_quests",
+            "equipped_weapon", "equipped_armor"
         ]
         for k in required_keys:
             if k not in character:
@@ -92,18 +100,20 @@ def load_character(character_name, save_directory=SAVE_DIR):
         raise SaveFileCorruptedError(character_name)
 
 
-def list_saved_characters(save_directory="data/save_games"):
+def list_saved_characters(save_directory=SAVE_DIR):
     if not os.path.exists(save_directory):
         return []
     files = os.listdir(save_directory)
     return [f.replace("_save.txt", "") for f in files if f.endswith("_save.txt")]
 
-def delete_character(character_name, save_directory="data/save_games"):
+
+def delete_character(character_name, save_directory=SAVE_DIR):
     filename = os.path.join(save_directory, f"{character_name}_save.txt")
     if not os.path.exists(filename):
         raise CharacterNotFoundError(character_name)
     os.remove(filename)
     return True
+
 
 # ============================================================================
 # CHARACTER OPERATIONS
@@ -121,6 +131,7 @@ def gain_experience(character, xp_amount):
         character["magic"] += 2
         character["health"] = character["max_health"]
 
+
 def add_gold(character, amount):
     new_gold = character["gold"] + amount
     if new_gold < 0:
@@ -128,19 +139,23 @@ def add_gold(character, amount):
     character["gold"] = new_gold
     return character["gold"]
 
+
 def heal_character(character, amount):
     heal_amount = min(amount, character["max_health"] - character["health"])
     character["health"] += heal_amount
     return heal_amount
 
+
 def is_character_dead(character):
     return character["health"] <= 0
+
 
 def revive_character(character):
     if not is_character_dead(character):
         return False
     character["health"] = character["max_health"] // 2
     return True
+
 
 # ============================================================================
 # VALIDATION
@@ -150,7 +165,8 @@ def validate_character_data(character):
     required_keys = [
         "name", "class", "level", "health", "max_health",
         "strength", "magic", "experience", "gold",
-        "inventory", "active_quests", "completed_quests"
+        "inventory", "active_quests", "completed_quests",
+        "equipped_weapon", "equipped_armor"
     ]
     for key in required_keys:
         if key not in character:
@@ -169,7 +185,7 @@ def validate_character_data(character):
 
 if __name__ == "__main__":
     print("=== CHARACTER MANAGER TEST ===")
-    
+
     # Test character creation
     try:
         char = create_character("TestHero", "Warrior")
@@ -177,14 +193,14 @@ if __name__ == "__main__":
         print(f"Stats: HP={char['health']}, STR={char['strength']}, MAG={char['magic']}")
     except InvalidCharacterClassError as e:
         print(f"Invalid class: {e}")
-    
-    #Test saving
+
+    # Test saving
     try:
         save_character(char)
         print("Character saved successfully")
     except Exception as e:
         print(f"Save error: {e}")
-    
+
     # Test loading
     try:
         loaded = load_character("TestHero")
@@ -193,4 +209,3 @@ if __name__ == "__main__":
         print("Character not found")
     except SaveFileCorruptedError:
         print("Save file corrupted")
-
