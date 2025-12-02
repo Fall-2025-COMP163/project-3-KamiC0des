@@ -25,26 +25,38 @@ ALLOWED_CLASSES = ["Warrior", "Mage", "Cleric", "Rogue"]  # added Rogue
 
 
 def create_character(name, char_class):
-    if char_class not in ALLOWED_CLASSES:
-        raise InvalidCharacterClassError(char_class)
+    """Create a new character with default stats."""
+    base_stats = {
+        'Warrior': {'health': 100, 'strength': 15, 'magic': 5},
+        'Mage': {'health': 70, 'strength': 5, 'magic': 20},
+        'Rogue': {'health': 80, 'strength': 10, 'magic': 10},
+        'Cleric': {'health': 90, 'strength': 8, 'magic': 12}
+    }
+
+    if char_class not in base_stats:
+        raise InvalidCharacterClassError(f"Invalid class: {char_class}")
+
+    stats = base_stats[char_class]
 
     character = {
-        "name": name,
-        "class": char_class,
-        "level": 1,
-        "health": 100,
-        "max_health": 100,
-        "strength": 10,
-        "magic": 5,
-        "experience": 0,
-        "gold": 0,
-        "inventory": [],
-        "active_quests": [],
-        "completed_quests": [],
-        "equipped_weapon": None,
-        "equipped_armor": None,
+        'name': name,
+        'class': char_class,
+        'level': 1,
+        'experience': 0,
+        'gold': 100,
+        'health': stats['health'],
+        'max_health': stats['health'],
+        'strength': stats['strength'],
+        'magic': stats['magic'],
+        'inventory': [],             # <-- ensure exists
+        'active_quests': [],
+        'completed_quests': [],
+        'equipped_weapon': None,     # <-- ensure exists
+        'equipped_armor': None       # <-- ensure exists
     }
+
     return character
+
 
 
 def save_character(character, save_directory=SAVE_DIR):
