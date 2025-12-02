@@ -195,10 +195,10 @@ def purchase_item(character, item_id, item_data):
     if item_id not in item_data:
         raise ItemNotFoundError(item_id)
 
-    cost = item_data[item_id].get("cost", 0)
-
+    cost = item_data[item_id]["cost"] if isinstance(item_data[item_id], dict) else item_data[item_id]
+    
     if character["gold"] < cost:
-        raise InsufficientResourcesError("Not enough gold.")
+        raise InsufficientResourcesError(f"Not enough gold to purchase {item_id}.")
 
     if len(character["inventory"]) >= MAX_INVENTORY_SIZE:
         raise InventoryFullError("Inventory full.")
