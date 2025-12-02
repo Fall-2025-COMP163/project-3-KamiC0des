@@ -78,7 +78,10 @@ def load_character(character_name, save_directory="data/save_games"):
         character = {}
         with open(filename, "r") as f:
             for line in f:
-                key, value = line.strip().split(": ", 1)
+                line = line.strip()
+                if not line or ": " not in line:  # Skip empty/malformed lines
+                    continue
+                key, value = line.split(": ", 1)
                 if key in ["LEVEL", "HEALTH", "MAX_HEALTH", "STRENGTH", "MAGIC", "EXPERIENCE", "GOLD"]:
                     character[key.lower()] = int(value)
                 elif key in ["INVENTORY", "ACTIVE_QUESTS", "COMPLETED_QUESTS"]:
@@ -101,6 +104,7 @@ def load_character(character_name, save_directory="data/save_games"):
         raise SaveFileCorruptedError(character_name)
     except (ValueError, KeyError):
         raise InvalidSaveDataError(character_name)
+
 
 def list_saved_characters(save_directory="data/save_games"):
     if not os.path.exists(save_directory):
