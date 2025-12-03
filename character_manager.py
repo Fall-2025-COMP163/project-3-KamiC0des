@@ -86,14 +86,24 @@ def load_character(character_name, save_directory=SAVE_DIR):
                 if not line or ": " not in line:
                     continue
                 key, value = line.split(": ", 1)
-                key_upper = key.upper()
+                key_lower = key.lower()
 
-                if key_upper in ["LEVEL", "HEALTH", "MAX_HEALTH", "STRENGTH", "MAGIC", "EXPERIENCE", "GOLD"]:
-                    character[key.lower()] = int(value)
-                elif key_upper in ["INVENTORY", "ACTIVE_QUESTS", "COMPLETED_QUESTS"]:
-                    character[key.lower()] = value.split(",") if value else []
+                if key_lower in ["level", "health", "max_health", "strength", "magic", "experience", "gold"]:
+                    character[key_lower] = int(value)
+                    # List fields
+                elif key_lower in ["inventory", "active_quests", "completed_quests"]:
+                    character[key_lower] = value.split(",") if value else []
+                    # Other fields (name, class, equipment)
                 else:
-                    character[key.lower()] = value
+                    character[key_lower] = value
+
+        defaults = {
+            "inventory": [],
+            "active_quests":[],
+            "completed_quests":[],
+            "equipped_weapon": None,
+            "equipped_armor": None
+        }
 
         required_keys = [
             "name", "class", "level", "health", "max_health",
@@ -103,7 +113,7 @@ def load_character(character_name, save_directory=SAVE_DIR):
         ]
         for k in required_keys:
             if k not in character:
-                raise InvalidSaveDataError(f"Missing field: {k}")
+                character[k] = defaults.get(k, None)
 
         return character
     except (ValueError, KeyError):
